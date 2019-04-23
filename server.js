@@ -1,8 +1,9 @@
 const express = require("express");
 const app = express();
-const AuthorizationV1 = require("watson-developer-cloud/authorization/v1");
+// const AuthorizationV1 = require("watson-developer-cloud/authorization/v1");
 const SpeechToTextV1 = require("watson-developer-cloud/speech-to-text/v1");
 const vcapServices = require("vcap_services");
+const cors = require("cors");
 
 // allows environment properties to be set in a file named .env
 require("dotenv").config();
@@ -29,23 +30,34 @@ if (process.env.VCAP_SERVICES) {
 }
 
 app.use(express.static(__dirname + "/static"));
-
+app.use(cors());
 // token endpoints
 // **Warning**: these endpoints should probably be guarded with additional authentication & authorization for production use
 
 // speech to text token endpoint
-var sttAuthService = new AuthorizationV1(
+const speechToText = new SpeechToTextV1({
+  iam_apikey: process.env.SPEECH_TO_TEXT_IAM_APIKEY,
+  url: process.env.SPEECH_TO_TEXT_URL
+});
+
+/*
+var sttAuthService = new SpeechToTextV1(
   Object.assign(
     {
       username: process.env.SPEECH_TO_TEXT_USERNAME,
       password: process.env.SPEECH_TO_TEXT_PASSWORD,
-      iam_access_token: process.env.SPEECH_TO_TEXT_IAM_ACCESS_TOKEN
+      iam_access_token: process.env.SPEECH_TO_TEXT_IAM_ACCESS_TOKEN,
+      url: process.env.SPEECH_TO_TEXT_URL
+        ? process.env.SPEECH_TO_TEXT_URL
+        : SpeechToTextV1.URL
     },
     vcapServices.getCredentials("speech_to_text") // pulls credentials from environment in bluemix, otherwise returns {}
   )
 );
+*/
+
 app.use("/api/speech-to-text/token", function(req, res) {
-  sttAuthService.getToken({}, function(err, token) {
+  speechToText.getToken({}, function(err, token) {
     if (err) {
       console.log("Error retrieving token: ", err);
       res.status(500).send("Error retrieving token");
